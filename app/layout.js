@@ -1,6 +1,5 @@
 import './globals.css';
 import { Inter } from 'next/font/google';
-import CustomCursor from './../components/ui/CustomCursor';
 import { Toaster } from 'react-hot-toast';
 import api from "@/utils/api";
 import "slick-carousel/slick/slick.css"; 
@@ -22,7 +21,7 @@ export async function generateMetadata() {
       title: data.title || "Architylezz - Luxury Architecture & Interior Design",
       description: data.description || "Premium architectural solutions and interior design excellence",
      icons: {
-        icon: "/loader.png",  // ✅ Using logo.png instead
+        icon: "/loader.png",  
         apple: "/loader.png",
       },
     };
@@ -94,7 +93,6 @@ export default function RootLayout({ children }) {
           }}
         />
         <main className="relative">
-          <CustomCursor/>
           {children}
         </main>
       </body>

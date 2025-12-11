@@ -7,24 +7,49 @@ import { motion, AnimatePresence } from "framer-motion";
 import { gsap } from "gsap";
 import { Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
+import api from "@/utils/api";
+
 export default function AdminLayout({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const dashboardRef = useRef(null);
 
-  const handleLogin = (e) => {
+  // ------------------------------------------
+  // 🔐 CLEAN LOGIN (no firstTime)
+  // ------------------------------------------
+  const handleLogin = async (e) => {
     e.preventDefault();
     const email = e.target.email.value;
     const password = e.target.password.value;
 
-    if (email === "admin@site.com" && password === "12345") {
+    setLoading(true);
+
+    try {
+      await api.post("/owner/login", { email, password });
+
+      toast.success("Welcome Admin!");
       setIsAuthenticated(true);
-      toast.success("Welcome Admin")
-    } else {
-      toast.error("Invalid Credentials")
+      sessionStorage.setItem("admin-auth", "true");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Invalid Credentials");
+    } finally {
+      setLoading(false);
     }
   };
 
+  // ------------------------------------------
+  // 🔄 Keep Session On Refresh
+  // ------------------------------------------
+  useEffect(() => {
+    if (sessionStorage.getItem("admin-auth") === "true") {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  // ------------------------------------------
+  // ✨ Dashboard Fade Animation
+  // ------------------------------------------
   useEffect(() => {
     if (isAuthenticated && dashboardRef.current) {
       gsap.fromTo(
@@ -37,8 +62,6 @@ export default function AdminLayout({ children }) {
 
   return (
     <>
-    
-      {/* Overlay Login */}
       <AnimatePresence>
         {!isAuthenticated && (
           <motion.div
@@ -57,7 +80,9 @@ export default function AdminLayout({ children }) {
               <h2 className="text-2xl font-bold text-center mb-6 text-gray-900">
                 Admin Login
               </h2>
+
               <form onSubmit={handleLogin} className="space-y-4">
+                {/* Email */}
                 <div>
                   <input
                     type="email"
@@ -67,6 +92,8 @@ export default function AdminLayout({ children }) {
                     className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-gray-900 placeholder-gray-500"
                   />
                 </div>
+
+                {/* Password */}
                 <div className="relative">
                   <input
                     type={showPassword ? "text" : "password"}
@@ -83,11 +110,13 @@ export default function AdminLayout({ children }) {
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
+
                 <button
                   type="submit"
+                  disabled={loading}
                   className="w-full py-3 bg-black text-white font-semibold rounded-lg hover:bg-gray-900 transition"
                 >
-                  Login
+                  {loading ? "Checking..." : "Login"}
                 </button>
               </form>
             </motion.div>
@@ -100,7 +129,12 @@ export default function AdminLayout({ children }) {
         <div ref={dashboardRef} className="h-screen flex bg-white">
           <Sidebar />
           <div className="flex-1 flex flex-col">
-            <Topbar onLogout={() => setIsAuthenticated(false)} />
+            <Topbar
+              onLogout={() => {
+                sessionStorage.removeItem("admin-auth");
+                setIsAuthenticated(false);
+              }}
+            />
             <main className="flex-1 overflow-y-auto p-6 text-gray-900">
               {children}
             </main>
